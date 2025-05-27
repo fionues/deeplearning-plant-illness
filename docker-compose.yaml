@@ -1,12 +1,13 @@
 version: "3.8"
 services:
   jupyter:
+    platform: linux/arm64/v8
     build: .
     container_name: jupyter-gpu-deep-learning
     ports:
       - "8888:8888"
     volumes:
-      - ./workfiles
+      - ./:/workfiles
     deploy:
       resources:
         reservations:
