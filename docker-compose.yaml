@@ -1,0 +1,16 @@
+version: "3.8"
+services:
+  jupyter:
+    build: .
+    container_name: jupyter-gpu-deep-learning
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./workfiles
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
