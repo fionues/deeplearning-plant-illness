@@ -98,23 +98,23 @@ def head_conv(base, num_classes):
     return Model(inputs=base.input, outputs=output)
 
 backbones = {
-    # 'EfficientNetB0': EfficientNetB0,
-    # 'EfficientNetB3': EfficientNetB3,
-    # 'InceptionV3': InceptionV3,
+    'EfficientNetB0': EfficientNetB0,
+    'EfficientNetB3': EfficientNetB3,
+    'InceptionV3': InceptionV3,
     'MobileNetV2': MobileNetV2,
-    # 'DenseNet121': DenseNet121,
-    # 'Xception': Xception
+    'DenseNet121': DenseNet121,
+    'Xception': Xception
 }
 
 heads = {
     'simple': head_simple,
     'dense_dropout': head_dense_dropout,
-    'batchnorm_dropout': head_batchnorm_dropout,
-    'conv': head_conv
+    # 'batchnorm_dropout': head_batchnorm_dropout,
+    # 'conv': head_conv
 }
 
-def evaluate_models(csv_path, img_size=(299, 299), epochs=3):
-    (X_train, X_val, y_train, y_val), label_map = load_sample_data(csv_path, img_size=img_size)
+def evaluate_models(csv_path, img_size=(299, 299), epochs=3, images_per_label=20):
+    (X_train, X_val, y_train, y_val), label_map = load_sample_data(csv_path, img_size=img_size, images_per_label=images_per_label)
     num_classes = len(label_map)
     results = []
 
