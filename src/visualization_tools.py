@@ -44,12 +44,19 @@ def plot_loss_curves(loss, val_loss, model_name="Model"):
     plt.tight_layout()
     plt.show()
 
+
 def plot_conf_matrix(y_true, y_pred, class_names=None, normalize='true', title="Confusion Matrix"):
     cm = confusion_matrix(y_true, y_pred, normalize=normalize)
     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_names)
+    
     fig, ax = plt.subplots(figsize=(10, 8))
-    disp.plot(ax=ax, cmap='Blues')
-    plt.title(title)
-    plt.xticks(rotation=45)
-    plt.tight_layout()
+    disp.plot(ax=ax, cmap='Blues', xticks_rotation=45, colorbar=False)  # rotation handled here
+    
+    ax.set_title(title)
+    
+    # Align tick labels more precisely
+    ax.set_xticks(range(len(class_names)))
+    ax.set_xticklabels(class_names, rotation=45, ha='right')
+    
+    plt.subplots_adjust(bottom=0.2)  # increase bottom padding
     plt.show()

@@ -13,5 +13,5 @@ IMAGES_PER_LABEL = 200          # Number of images per label (max ca 200 - 1000)
 VALIDATION_SPLIT = 0.2         # Fraction of data for validation
 
 # Training settings
-EPOCHS = 20                    # Number of training epochs
+EPOCHS = 40                    # Number of training epochs
 BATCH_SIZE = 20                # Batch size for training
