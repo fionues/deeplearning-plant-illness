@@ -294,3 +294,34 @@ def load_all_results_from_pickles(folder_path=".", file_suffix=".pkl"):
         return pd.DataFrame()
 
     return pd.concat(all_dfs, ignore_index=True)
+
+
+def load_results_from_pickles(result_files, folder_path="."):
+    """
+    Loads specific pickle files containing DataFrames from a directory and combines them.
+
+    Parameters:
+    - result_files (dict): Dictionary mapping model names to file names.
+    - folder_path (str): Path to the folder containing pickle files.
+
+    Returns:
+    - pd.DataFrame: Combined DataFrame from specified pickle files.
+    """
+    all_dfs = []
+
+    for filename in result_files.values():
+        fpath = os.path.join(folder_path, filename)
+        if os.path.isfile(fpath):
+            with open(fpath, "rb") as f:
+                df = pickle.load(f)
+                if isinstance(df, pd.DataFrame):
+                    all_dfs.append(df)
+                else:
+                    print(f"Warning: {filename} does not contain a DataFrame.")
+        else:
+            print(f"Warning: {filename} not found in {folder_path}.")
+
+    if not all_dfs:
+        return pd.DataFrame()
+
+    return pd.concat(all_dfs, ignore_index=True)
