@@ -261,6 +261,45 @@ def evaluate_model(X_train, X_val, y_train, y_val, label_map, bname, epochs=20, 
 
     return pd.DataFrame(results)
 
+
+def evaluate_initial_loss(X_val, y_val, label_map, bname, heads_map=heads_map):
+    num_classes = len(label_map)
+
+    if bname not in backbones:
+        raise ValueError(f"Backbone {bname} not found in predefined backbones.")
+    
+    results = []
+    bmodel = backbones[bname]
+
+    base = bmodel(weights='imagenet', include_top=False, input_shape=img_size_map[bname] + (3,))
+    base.trainable = False
+
+    selected_heads = heads_map[bname]
+    print(selected_heads)
+
+    for head in selected_heads:
+        hname = head
+        print(head)
+        head_fn = heads[head]
+        print(head_fn)
+
+        model = head_fn(base, num_classes)
+        model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+        
+        # Capture initial (untrained) performance
+        initial_eval = model.evaluate(X_val, y_val, verbose=0)
+        initial_loss = initial_eval[0]
+        initial_accuracy = initial_eval[1]
+
+        results.append({
+            "backbone": bname,
+            "head": hname,
+            "initial_val_loss": initial_loss,
+            "initial_val_accuracy": initial_accuracy,
+        })
+
+    return pd.DataFrame(results)
+
 #####################
 
 best_backbones = {
