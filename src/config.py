@@ -9,9 +9,9 @@ ORIGINAL_IMG_SIZE = (256, 256)  # Original image size before processing
 TARGET_IMG_SIZE = (299, 299)    # Target image size (299 required by InceptionV3)
 
 # Dataset settings
-IMAGES_PER_LABEL = 20          # Number of images per label
+IMAGES_PER_LABEL = 200          # Number of images per label (max ca 200 - 1000)
 VALIDATION_SPLIT = 0.2         # Fraction of data for validation
 
 # Training settings
-EPOCHS = 20                    # Number of training epochs
+EPOCHS = 40                    # Number of training epochs
 BATCH_SIZE = 20                # Batch size for training

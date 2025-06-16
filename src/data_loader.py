@@ -8,14 +8,31 @@ from sklearn.model_selection import train_test_split
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.preprocessing.image import img_to_array, array_to_img
 import os
+from tensorflow.keras.applications.efficientnet import preprocess_input as effnet_preprocess
+import pickle
+
+def default_normalization_preprocessing(img):
+    return np.array(img) / 255.0
+
+def efficient_net_preproprecssing(img):
+    return effnet_preprocess(np.array(img))
+
+preprocessing_map = {
+    "default": default_normalization_preprocessing,
+    "efficient": efficient_net_preproprecssing
+}
 
 
 def load_image_data(
     csv_file="../data/image_data_rel.csv",
     img_size=(256, 256),
+    # if load_all_images is True, images_per_label is ignored
+    # and all images per label are loaded
     images_per_label=20,
+    load_all_images=False,
     validation_split=0.2,
     random_seed=42,
+    preprocessing="default"
 ):
     """
     Loads image data from a CSV file with columns: ["url", "label"]
@@ -42,14 +59,18 @@ def load_image_data(
 
     for label in labels:
         images = df[df["label"] == label]["url"].tolist()
-        selected_images = random.sample(images, min(len(images), images_per_label))
+        if(load_all_images):
+            selected_images = images
+        else:
+            selected_images = random.sample(images, min(len(images), images_per_label))
 
         for rel_path in selected_images:
             image_path = project_root / rel_path
             try:
                 img = Image.open(image_path).convert("RGB")
                 img = img.resize(img_size)
-                img_array = np.array(img) / 255.0
+                preprocessing_fn = preprocessing_map[preprocessing]
+                img_array = preprocessing_fn(img)
 
                 X.append(img_array)
                 y.append(label_map[label])
@@ -71,7 +92,10 @@ def load_image_data(
 def load_image_data_with_augmentation(
     csv_file="../data/image_data_rel.csv",
     img_size=(256, 256),
+    # if load_all_images is True, images_per_label is ignored
+    # and all images per label are loaded
     images_per_label=20,
+    load_all_images=False,
     validation_split=0.2,
     random_seed=42,
     batch_size=32,
@@ -102,7 +126,10 @@ def load_image_data_with_augmentation(
 
     for label in labels:
         images = df[df["label"] == label]["url"].tolist()
-        selected_images = random.sample(images, min(len(images), images_per_label))
+        if(load_all_images):
+            selected_images = images
+        else:
+            selected_images = random.sample(images, min(len(images), images_per_label))
 
         for rel_path in selected_images:
             image_path = project_root / rel_path
@@ -198,3 +225,103 @@ def augment_and_save_images(X, y, label_map, output_dir="augmented_images", augm
             i += 1
             if i >= augmentations_per_image:
                 break
+
+
+
+def update_results(new_results, results_file="model_eval_results.pkl"):
+    """
+    Updates a pickle file of model evaluation results, ensuring uniqueness by (backbone, head).
+
+    Parameters:
+    - new_results (list of dict): New evaluation entries to add.
+    - results_file (str): Path to the pickle file where results are stored.
+    """
+    # Step 1: Load existing results if the file exists
+    if os.path.exists(results_file):
+        existing_results = get_results(results_file)
+    else:
+        with open(results_file, "wb") as f:
+            pickle.dump(new_results, f)
+        return
+    
+    df_combined = pd.concat([existing_results, new_results], ignore_index=True)
+    df_unique = df_combined.drop_duplicates(subset=["backbone", "head"], keep="last")
+
+    # Step 3: Save the updated results
+    with open(results_file, "wb") as f:
+        pickle.dump(df_unique, f)
+
+
+
+def get_results(results_file="model_eval_results.pkl"):
+    """
+    Reads the results from the CSV file.
+
+    Args:
+        results_file (str): Path to the results CSV file.
+
+    Returns:
+        pd.DataFrame: DataFrame containing the results.
+    """
+    with open(results_file, "rb") as f:
+        return pickle.load(f)
+    
+
+
+def load_all_results_from_pickles(folder_path=".", file_suffix=".pkl"):
+    """
+    Loads all pickle files containing DataFrames from a directory and combines them.
+
+    Parameters:
+    - folder_path (str): Path to the folder containing pickle files.
+    - file_suffix (str): File extension to look for. Defaults to '.pkl'.
+
+    Returns:
+    - pd.DataFrame: Combined DataFrame from all pickle files.
+    """
+    all_dfs = []
+
+    for fname in os.listdir(folder_path):
+        if fname.endswith(file_suffix):
+            fpath = os.path.join(folder_path, fname)
+            with open(fpath, "rb") as f:
+                df = pickle.load(f)
+                # Ensure it's a DataFrame before appending
+                if isinstance(df, pd.DataFrame):
+                    all_dfs.append(df)
+
+    if not all_dfs:
+        return pd.DataFrame()
+
+    return pd.concat(all_dfs, ignore_index=True)
+
+
+def load_results_from_pickles(result_files, folder_path="."):
+    """
+    Loads specific pickle files containing DataFrames from a directory and combines them.
+
+    Parameters:
+    - result_files (dict): Dictionary mapping model names to file names.
+    - folder_path (str): Path to the folder containing pickle files.
+
+    Returns:
+    - pd.DataFrame: Combined DataFrame from specified pickle files.
+    """
+    all_dfs = []
+
+    for filename in result_files.values():
+        fpath = os.path.join(folder_path, filename)
+        if os.path.isfile(fpath):
+            with open(fpath, "rb") as f:
+                df = pickle.load(f)
+                if isinstance(df, pd.DataFrame):
+                    all_dfs.append(df)
+                else:
+                    print(f"Warning: {filename} does not contain a DataFrame.")
+        else:
+            print(f"Warning: {filename} not found in {folder_path}.")
+
+    if not all_dfs:
+        return pd.DataFrame()
+
+    return pd.concat(all_dfs, ignore_index=True)
